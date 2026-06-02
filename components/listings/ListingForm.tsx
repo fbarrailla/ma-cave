@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { WINE_REGIONS, WINE_COLORS, BOTTLE_SIZES } from '@/lib/utils'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Listing } from '@/lib/supabase/types'
 
 interface ListingFormProps {
@@ -16,6 +17,8 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const t = useTranslations('form')
+  const tc = useTranslations('colors')
 
   const [loading, setLoading] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -83,11 +86,11 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
     if (listing) {
       const { error } = await supabase.from('listings').update(payload).eq('id', listing.id)
       if (error) { setError(error.message); setLoading(false); return }
-      router.push(`/annonces/${listing.id}`)
+      router.push(`/annonces/detail?id=${listing.id}`)
     } else {
       const { data, error } = await supabase.from('listings').insert({ ...payload, seller_id: userId }).select().single()
       if (error) { setError(error.message); setLoading(false); return }
-      router.push(`/annonces/${data.id}`)
+      router.push(`/annonces/detail?id=${data.id}`)
     }
   }
 
@@ -100,9 +103,8 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
       )}
 
-      {/* Images */}
       <div className="bg-white rounded-xl border border-[#f0e8d8] p-5">
-        <h2 className="font-semibold text-gray-800 mb-4">Photos</h2>
+        <h2 className="font-semibold text-gray-800 mb-4">{t('photos')}</h2>
         <div className="grid grid-cols-3 gap-3 mb-3">
           {images.map((url, i) => (
             <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-50">
@@ -117,87 +119,89 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
             <button type="button" onClick={() => fileInputRef.current?.click()}
               className="aspect-square rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#722f37] hover:text-[#722f37] transition-colors">
               {uploadingImages ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-              <span className="text-xs">Ajouter</span>
+              <span className="text-xs">{t('add_photo')}</span>
             </button>
           )}
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={e => e.target.files && handleImageUpload(e.target.files)} />
-        <p className="text-xs text-gray-400">Max 6 photos · JPG, PNG, WebP · 5 Mo max par photo</p>
+        <p className="text-xs text-gray-400">{t('photos_max')}</p>
       </div>
 
-      {/* Infos principales */}
       <div className="bg-white rounded-xl border border-[#f0e8d8] p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800">Informations</h2>
+        <h2 className="font-semibold text-gray-800">{t('info')}</h2>
         <div>
-          <label className={labelClass}>Titre de l'annonce *</label>
+          <label className={labelClass}>{t('wine_title')} *</label>
           <input required value={form.title} onChange={e => update('title', e.target.value)}
-            placeholder="Ex: Pétrus 2015 - 75cl" className={inputClass} />
+            placeholder={t('wine_title_placeholder')} className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Producteur / Château</label>
+            <label className={labelClass}>{t('producer')}</label>
             <input value={form.producer} onChange={e => update('producer', e.target.value)}
-              placeholder="Ex: Château Margaux" className={inputClass} />
+              placeholder={t('producer_placeholder')} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Appellation</label>
+            <label className={labelClass}>{t('appellation')}</label>
             <input value={form.appellation} onChange={e => update('appellation', e.target.value)}
-              placeholder="Ex: Pomerol" className={inputClass} />
+              placeholder={t('appellation_placeholder')} className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Région</label>
+            <label className={labelClass}>{t('region')}</label>
             <select value={form.region} onChange={e => update('region', e.target.value)} className={inputClass}>
-              <option value="">Sélectionner</option>
+              <option value="">{t('select')}</option>
               {WINE_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelClass}>Millésime</label>
+            <label className={labelClass}>{t('vintage')}</label>
             <input type="number" value={form.vintage} onChange={e => update('vintage', e.target.value)}
-              placeholder="Ex: 2018" min="1900" max={new Date().getFullYear()} className={inputClass} />
+              placeholder={t('vintage_placeholder')} min="1900" max={new Date().getFullYear()} className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Couleur</label>
+            <label className={labelClass}>{t('color')}</label>
             <select value={form.color} onChange={e => update('color', e.target.value)} className={inputClass}>
-              <option value="">Sélectionner</option>
-              {WINE_COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              <option value="">{t('select')}</option>
+              {WINE_COLORS.map(c => (
+                <option key={c.value} value={c.value}>
+                  {tc(c.value as 'rouge' | 'blanc' | 'rosé' | 'effervescent' | 'liquoreux')}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className={labelClass}>Cépage</label>
+            <label className={labelClass}>{t('grape')}</label>
             <input value={form.grape_variety} onChange={e => update('grape_variety', e.target.value)}
-              placeholder="Ex: Merlot, Cabernet" className={inputClass} />
+              placeholder={t('grape_placeholder')} className={inputClass} />
           </div>
         </div>
         <div>
-          <label className={labelClass}>Description</label>
+          <label className={labelClass}>{t('description')}</label>
           <textarea value={form.description} onChange={e => update('description', e.target.value)}
-            rows={4} placeholder="Décrivez votre bouteille, son état, ses caractéristiques..."
+            rows={4} placeholder={t('description_placeholder')}
             className={`${inputClass} resize-none`} />
         </div>
       </div>
 
-      {/* Prix et quantité */}
       <div className="bg-white rounded-xl border border-[#f0e8d8] p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800">Prix & Quantité</h2>
+        <h2 className="font-semibold text-gray-800">{t('price_qty')}</h2>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className={labelClass}>Prix (€) *</label>
+            <label className={labelClass}>{t('price')} *</label>
             <input required type="number" value={form.price} onChange={e => update('price', e.target.value)}
               placeholder="0.00" min="0.01" step="0.01" className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Quantité</label>
+            <label className={labelClass}>{t('quantity')}</label>
             <input type="number" value={form.quantity} onChange={e => update('quantity', e.target.value)}
               min="1" max="999" className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Format</label>
+            <label className={labelClass}>{t('bottle_size')}</label>
             <select value={form.bottle_size} onChange={e => update('bottle_size', e.target.value)} className={inputClass}>
               {BOTTLE_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -208,7 +212,7 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
       <button type="submit" disabled={loading}
         className="w-full bg-[#722f37] text-white py-3 rounded-xl font-semibold hover:bg-[#9b3d47] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {listing ? "Mettre à jour l'annonce" : "Publier l'annonce"}
+        {listing ? t('submit_update') : t('submit_create')}
       </button>
     </form>
   )

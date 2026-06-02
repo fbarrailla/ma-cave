@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ListingForm } from '@/components/listings/ListingForm'
 import { useUser } from '@/hooks/useUser'
+import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import type { Listing } from '@/lib/supabase/types'
 
@@ -12,6 +14,7 @@ function EditListingContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const user = useUser()
+  const t = useTranslations('form')
   const id = searchParams.get('id')
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,7 +45,7 @@ function EditListingContent() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-[#1a1209] mb-6">Modifier l&apos;annonce</h1>
+      <h1 className="text-2xl font-bold text-[#1a1209] mb-6">{t('title_edit')}</h1>
       <ListingForm userId={user.id} listing={listing} />
     </div>
   )

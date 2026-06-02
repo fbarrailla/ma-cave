@@ -5,12 +5,15 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ListingCard } from '@/components/listings/ListingCard'
 import { ListingFilters } from '@/components/listings/ListingFilters'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import type { ListingWithSeller } from '@/lib/supabase/types'
 
 const PAGE_SIZE = 12
 
 function AnnoncesContent() {
   const searchParams = useSearchParams()
+  const t = useTranslations('listings')
   const [listings, setListings] = useState<ListingWithSeller[]>([])
   const [count, setCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,11 +61,15 @@ function AnnoncesContent() {
     return `/annonces?${params}`
   }
 
+  const countText = count !== null
+    ? count === 1 ? t('result', { count }) : t('results', { count })
+    : null
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-[#1a1209] mb-6">
-        Explorer les annonces
-        {count !== null && <span className="text-base font-normal text-gray-400 ml-2">({count} résultat{count !== 1 ? 's' : ''})</span>}
+        {t('title')}
+        {countText && <span className="text-base font-normal text-gray-400 ml-2">({countText})</span>}
       </h1>
       <div className="flex flex-col md:flex-row gap-6">
         <aside className="md:w-64 flex-shrink-0">
@@ -83,10 +90,10 @@ function AnnoncesContent() {
               {totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-8">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <a key={p} href={buildPageUrl(p)}
+                    <Link key={p} href={buildPageUrl(p)}
                       className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${p === page ? 'bg-[#722f37] text-white' : 'bg-white border border-gray-200 text-gray-700 hover:border-[#722f37]'}`}>
                       {p}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -94,8 +101,8 @@ function AnnoncesContent() {
           ) : (
             <div className="text-center py-20 text-gray-400">
               <div className="text-5xl mb-4">🔍</div>
-              <p className="text-lg font-medium text-gray-600">Aucune annonce trouvée</p>
-              <p className="text-sm mt-1">Essayez d&apos;élargir vos critères de recherche</p>
+              <p className="text-lg font-medium text-gray-600">{t('no_results')}</p>
+              <p className="text-sm mt-1">{t('no_results_hint')}</p>
             </div>
           )}
         </div>

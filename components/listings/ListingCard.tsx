@@ -1,19 +1,20 @@
-import Link from 'next/link'
+'use client'
+
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { MapPin, Calendar, Package } from 'lucide-react'
 import { formatPrice, WINE_COLOR_BADGE, WINE_COLOR_DOT } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 import type { ListingWithSeller } from '@/lib/supabase/types'
 
 interface ListingCardProps {
   listing: ListingWithSeller
 }
 
-const COLOR_LABELS: Record<string, string> = {
-  rouge: 'Rouge', blanc: 'Blanc', rosé: 'Rosé',
-  effervescent: 'Effervescent', liquoreux: 'Liquoreux',
-}
-
 export function ListingCard({ listing }: ListingCardProps) {
+  const tc = useTranslations('colors')
+  const ts = useTranslations('status')
+  const tcommon = useTranslations('common')
   const image = listing.images?.[0]
   const colorClass = listing.color ? WINE_COLOR_BADGE[listing.color] : 'bg-gray-100 text-gray-700'
   const dotClass = listing.color ? WINE_COLOR_DOT[listing.color] : 'bg-gray-400'
@@ -33,16 +34,18 @@ export function ListingCard({ listing }: ListingCardProps) {
         {listing.status !== 'active' && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-semibold">
-              {listing.status === 'sold' ? 'Vendu' : 'Réservé'}
+              {ts((listing.status ?? 'active') as 'active' | 'reserved' | 'sold')}
             </span>
           </div>
         )}
-        <div className="absolute top-2 right-2">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-            {listing.color ? COLOR_LABELS[listing.color] : ''}
-          </span>
-        </div>
+        {listing.color && (
+          <div className="absolute top-2 right-2">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+              {tc(listing.color as 'rouge' | 'blanc' | 'rosé' | 'effervescent' | 'liquoreux')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -81,7 +84,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
         {listing.profiles && (
           <p className="text-xs text-gray-400 truncate">
-            Par {listing.profiles.full_name || 'Particulier'}
+            {listing.profiles.full_name || tcommon('particulier')}
             {listing.profiles.location && ` · ${listing.profiles.location}`}
           </p>
         )}

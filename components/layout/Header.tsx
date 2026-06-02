@@ -1,9 +1,10 @@
 'use client'
 
-import Link from 'next/link'
+import { Link, usePathname, useRouter } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PlusCircle, MessageSquare, User, LogOut, Menu, X } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 export function Header() {
@@ -12,6 +13,10 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const supabase = createClient()
+  const t = useTranslations('nav')
+  const locale = useLocale()
+  const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
@@ -47,6 +52,10 @@ export function Header() {
     window.location.href = '/'
   }
 
+  const switchLocale = (next: string) => {
+    router.replace(pathname, { locale: next })
+  }
+
   return (
     <header
       className="sticky top-0 z-50 transition-all duration-300"
@@ -79,7 +88,7 @@ export function Header() {
               className="text-[9px] tracking-[0.18em] uppercase"
               style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)', fontWeight: 400 }}
             >
-              vins entre particuliers
+              {t('tagline')}
             </span>
           </span>
         </Link>
@@ -91,7 +100,7 @@ export function Header() {
             className="text-[11px] uppercase tracking-[0.14em] font-medium link-gold"
             style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}
           >
-            Explorer
+            {t('explore')}
           </Link>
 
           {user ? (
@@ -117,7 +126,7 @@ export function Header() {
                 }}
               >
                 <PlusCircle size={12} />
-                Vendre
+                {t('sell')}
               </Link>
 
               <Link href="/messages" className="relative group" style={{ color: 'oklch(82% 0.06 72)' }}>
@@ -161,9 +170,28 @@ export function Header() {
                 el.style.color = 'oklch(68% 0.09 68)'
               }}
             >
-              Connexion
+              {t('login')}
             </Link>
           )}
+
+          {/* Locale switcher */}
+          <div className="flex items-center gap-1 border-l border-white/10 pl-6">
+            {(['fr', 'en'] as const).map(l => (
+              <button
+                key={l}
+                onClick={() => switchLocale(l)}
+                className="text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 transition-all"
+                style={{
+                  color: locale === l ? 'oklch(68% 0.09 68)' : 'oklch(55% 0.04 72)',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: locale === l ? 600 : 400,
+                  borderBottom: locale === l ? '1px solid oklch(68% 0.09 68)' : '1px solid transparent',
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </nav>
 
         {/* Mobile hamburger */}
@@ -185,38 +213,55 @@ export function Header() {
           <Link href="/annonces" onClick={() => setOpen(false)}
             className="text-[11px] uppercase tracking-[0.14em]"
             style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
-            Explorer
+            {t('explore')}
           </Link>
           {user ? (
             <>
               <Link href="/annonces/nouvelle" onClick={() => setOpen(false)}
                 className="text-[11px] uppercase tracking-[0.14em]"
                 style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
-                Vendre une bouteille
+                {t('sell')}
               </Link>
               <Link href="/messages" onClick={() => setOpen(false)}
                 className="text-[11px] uppercase tracking-[0.14em]"
                 style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
-                Messages {unread > 0 && `(${unread})`}
+                {t('messages')} {unread > 0 && `(${unread})`}
               </Link>
               <Link href="/profil" onClick={() => setOpen(false)}
                 className="text-[11px] uppercase tracking-[0.14em]"
                 style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
-                Mon profil
+                {t('profile')}
               </Link>
               <button onClick={signOut}
                 className="text-left text-[11px] uppercase tracking-[0.14em]"
                 style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)' }}>
-                Déconnexion
+                {t('logout')}
               </button>
             </>
           ) : (
             <Link href="/connexion" onClick={() => setOpen(false)}
               className="text-[11px] uppercase tracking-[0.14em]"
               style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)' }}>
-              Connexion
+              {t('login')}
             </Link>
           )}
+          {/* Mobile locale switcher */}
+          <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'oklch(68% 0.09 68 / 0.15)' }}>
+            {(['fr', 'en'] as const).map(l => (
+              <button
+                key={l}
+                onClick={() => { switchLocale(l); setOpen(false) }}
+                className="text-[11px] uppercase tracking-[0.14em]"
+                style={{
+                  color: locale === l ? 'oklch(68% 0.09 68)' : 'oklch(55% 0.04 72)',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: locale === l ? 600 : 400,
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </header>

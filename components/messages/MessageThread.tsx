@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRelativeDate } from '@/lib/utils'
 import { Send, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Message } from '@/lib/supabase/types'
 
 interface MessageThreadProps {
@@ -19,6 +20,7 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const t = useTranslations('messages')
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -87,7 +89,7 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
       <div className="flex-1 overflow-y-auto py-2 space-y-1">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 py-8 text-sm">
-            Commencez la conversation avec {otherUserName}
+            {t('start_hint', { name: otherUserName })}
           </div>
         )}
         {messages.map(msg => {
@@ -110,7 +112,7 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <p className={`text-xs mt-1 ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
                     {new Date(msg.created_at ?? Date.now()).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    {isMe && msg.read && ' · Lu'}
+                    {isMe && msg.read && ` · ${t('read')}`}
                   </p>
                 </div>
               </div>
@@ -126,7 +128,7 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Écrire un message..."
+          placeholder={t('write_placeholder')}
           rows={1}
           className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#722f37]/20 focus:border-[#722f37] resize-none"
           style={{ minHeight: '44px', maxHeight: '120px' }}

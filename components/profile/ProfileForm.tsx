@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Profile } from '@/lib/supabase/types'
 import { WINE_REGIONS } from '@/lib/utils'
 
@@ -14,6 +15,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, userId, bankOnly = false }: ProfileFormProps) {
   const supabase = createClient()
+  const t = useTranslations('profile')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -58,37 +60,37 @@ export function ProfileForm({ profile, userId, bankOnly = false }: ProfileFormPr
         <>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
-              <label className={labelClass}>Prénom et nom</label>
+              <label className={labelClass}>{t('full_name')}</label>
               <input value={form.full_name} onChange={e => update('full_name', e.target.value)}
                 placeholder="Jean Dupont" className={inputClass} />
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label className={labelClass}>Téléphone</label>
+              <label className={labelClass}>{t('phone')}</label>
               <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
                 placeholder="+33 6 00 00 00 00" className={inputClass} />
             </div>
           </div>
           <div>
-            <label className={labelClass}>Localisation</label>
+            <label className={labelClass}>{t('location')}</label>
             <select value={form.location} onChange={e => update('location', e.target.value)} className={inputClass}>
-              <option value="">Sélectionner une région</option>
+              <option value="">{t('select_region')}</option>
               {WINE_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelClass}>À propos de moi</label>
+            <label className={labelClass}>{t('bio')}</label>
             <textarea value={form.bio} onChange={e => update('bio', e.target.value)}
-              rows={3} placeholder="Passionné de vins depuis..." className={`${inputClass} resize-none`} />
+              rows={3} placeholder={t('bio_placeholder')} className={`${inputClass} resize-none`} />
           </div>
         </>
       ) : (
         <>
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
             <span>🔒</span>
-            <span>Vos coordonnées bancaires sont stockées de manière sécurisée et ne sont visibles que par vous.</span>
+            <span>{t('bank_secure')}</span>
           </div>
           <div>
-            <label className={labelClass}>Titulaire du compte</label>
+            <label className={labelClass}>{t('account_holder')}</label>
             <input value={form.account_holder} onChange={e => update('account_holder', e.target.value)}
               placeholder="Jean Dupont" className={inputClass} />
           </div>
@@ -109,7 +111,7 @@ export function ProfileForm({ profile, userId, bankOnly = false }: ProfileFormPr
       <button type="submit" disabled={loading}
         className="flex items-center gap-2 bg-[#722f37] text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-[#9b3d47] transition-colors disabled:opacity-60">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
-        {saved ? 'Enregistré !' : 'Sauvegarder'}
+        {saved ? t('saved') : t('save')}
       </button>
     </form>
   )

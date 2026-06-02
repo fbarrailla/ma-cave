@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { MessageThread } from '@/components/messages/MessageThread'
 import { formatPrice } from '@/lib/utils'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
+import { useTranslations } from 'next-intl'
 import type { Profile, Message } from '@/lib/supabase/types'
 
 type OtherUser = Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
@@ -19,6 +20,7 @@ function ConversationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const user = useUser()
+  const tc = useTranslations('common')
   const id = searchParams.get('id')
   const [conv, setConv] = useState<ConvData | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -75,7 +77,7 @@ function ConversationContent() {
           {other?.full_name?.[0]?.toUpperCase() ?? '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-900">{other?.full_name ?? 'Particulier'}</div>
+          <div className="font-semibold text-gray-900">{other?.full_name ?? tc('particulier')}</div>
           {conv.listings && (
             <Link href={`/annonces/detail?id=${conv.listings.id}`} className="text-xs text-[#722f37] hover:underline truncate block">
               {conv.listings.title} · {formatPrice(conv.listings.price)}
@@ -95,7 +97,7 @@ function ConversationContent() {
         conversationId={id!}
         currentUserId={user.id}
         initialMessages={messages}
-        otherUserName={other?.full_name ?? 'Particulier'}
+        otherUserName={other?.full_name ?? tc('particulier')}
       />
     </div>
   )

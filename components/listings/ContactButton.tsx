@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 import { MessageSquare, Loader2 } from 'lucide-react'
 
 interface ContactButtonProps {
@@ -15,6 +16,7 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const t = useTranslations('listings')
 
   const handleContact = async () => {
     if (!currentUserId) {
@@ -24,7 +26,6 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
     if (currentUserId === sellerId) return
 
     setLoading(true)
-    // Find or create conversation
     const { data: existing } = await supabase
       .from('conversations')
       .select('id')
@@ -51,7 +52,7 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
     <button onClick={handleContact} disabled={loading}
       className="w-full flex items-center justify-center gap-2 bg-[#722f37] text-white py-3 rounded-lg font-semibold hover:bg-[#9b3d47] transition-colors disabled:opacity-60">
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
-      Contacter le vendeur
+      {t('contact_seller')}
     </button>
   )
 }

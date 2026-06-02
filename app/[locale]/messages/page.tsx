@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter, Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { formatRelativeDate, formatPrice } from '@/lib/utils'
 import { MessageSquare, Loader2 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
+import { useTranslations } from 'next-intl'
 import type { Profile } from '@/lib/supabase/types'
 
 type OtherUser = Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
@@ -23,12 +23,14 @@ type ConvItem = {
 export default function MessagesPage() {
   const user = useUser()
   const router = useRouter()
+  const t = useTranslations('messages')
+  const tc = useTranslations('common')
   const [conversations, setConversations] = useState<ConvItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user === undefined) return
-    if (user === null) { router.push('/connexion?redirect=/messages'); return }
+    if (user === null) { router.push('/connexion'); return }
 
     const supabase = createClient()
     supabase
@@ -67,15 +69,15 @@ export default function MessagesPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-[#1a1209] mb-6">Messages</h1>
+      <h1 className="text-2xl font-bold text-[#1a1209] mb-6">{t('title')}</h1>
 
       {conversations.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-[#f0e8d8]">
           <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Aucune conversation</p>
-          <p className="text-sm text-gray-400 mt-1">Contactez un vendeur depuis une annonce pour démarrer</p>
+          <p className="text-gray-500 font-medium">{t('empty')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('empty_hint')}</p>
           <Link href="/annonces" className="mt-4 inline-block bg-[#722f37] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#9b3d47] transition-colors">
-            Explorer les annonces
+            {t('explore')}
           </Link>
         </div>
       ) : (
@@ -98,7 +100,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className={`font-semibold text-sm ${hasUnread ? 'text-gray-900' : 'text-gray-700'}`}>
-                      {other?.full_name ?? 'Particulier'}
+                      {other?.full_name ?? tc('particulier')}
                     </span>
                     <span className="text-xs text-gray-400 flex-shrink-0">
                       {lastMsgDate ? formatRelativeDate(lastMsgDate) : ''}
@@ -111,8 +113,8 @@ export default function MessagesPage() {
                   )}
                   <p className={`text-sm truncate ${hasUnread ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>
                     {conv.last_message
-                      ? (conv.last_message.sender_id === user.id ? 'Vous : ' : '') + conv.last_message.content
-                      : 'Nouvelle conversation'}
+                      ? (conv.last_message.sender_id === user.id ? t('you') : '') + conv.last_message.content
+                      : t('new_conversation', { name: other?.full_name ?? '' })}
                   </p>
                 </div>
 
