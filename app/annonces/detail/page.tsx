@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatPrice, formatDate, WINE_COLOR_BADGE, WINE_COLOR_DOT } from '@/lib/utils'
-import { MapPin, Calendar, Package, Wine, Pencil, Eye, Loader2 } from 'lucide-react'
+import { MapPin, Calendar, Package, Wine, Pencil, Eye, Loader2, CheckCircle } from 'lucide-react'
 import { ContactButton } from '@/components/listings/ContactButton'
 import { ImageGallery } from '@/components/listings/ImageGallery'
 import { useUser } from '@/hooks/useUser'
@@ -35,6 +35,7 @@ function ListingDetailContent() {
   const id = searchParams.get('id')
   const [listing, setListing] = useState<ListingWithProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [statusUpdating, setStatusUpdating] = useState(false)
 
   useEffect(() => {
     if (!id) { router.replace('/annonces'); return }
@@ -50,6 +51,15 @@ function ListingDetailContent() {
         setLoading(false)
       })
   }, [id])
+
+  const updateStatus = async (newStatus: 'active' | 'reserved' | 'sold') => {
+    if (!listing || statusUpdating) return
+    setStatusUpdating(true)
+    const supabase = createClient()
+    const { error } = await supabase.from('listings').update({ status: newStatus }).eq('id', listing.id)
+    if (!error) setListing({ ...listing, status: newStatus })
+    setStatusUpdating(false)
+  }
 
   if (loading || !id) {
     return (
@@ -162,10 +172,38 @@ function ListingDetailContent() {
               <ContactButton listingId={listing.id} sellerId={listing.seller_id} currentUserId={user?.id} />
             )}
             {isOwner && (
-              <Link href={`/annonces/editer?id=${id}`}
-                className="block w-full text-center bg-[#722f37] text-white py-3 rounded-lg font-semibold hover:bg-[#9b3d47] transition-colors">
-                Modifier l&apos;annonce
-              </Link>
+              <div className="space-y-3">
+                <Link href={`/annonces/editer?id=${id}`}
+                  className="block w-full text-center bg-[#722f37] text-white py-3 rounded-lg font-semibold hover:bg-[#9b3d47] transition-colors">
+                  Modifier l&apos;annonce
+                </Link>
+                <div>
+                  <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">Statut de l&apos;annonce</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(['active', 'reserved', 'sold'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => updateStatus(s)}
+                        disabled={statusUpdating || status === s}
+                        className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg text-xs font-medium border transition-all ${
+                          status === s
+                            ? s === 'active' ? 'bg-green-50 border-green-300 text-green-800'
+                            : s === 'reserved' ? 'bg-yellow-50 border-yellow-300 text-yellow-800'
+                            : 'bg-red-50 border-red-300 text-red-800'
+                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                        }`}
+                      >
+                        {statusUpdating && status !== s ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : status === s ? (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        ) : null}
+                        {STATUS_LABELS[s]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
