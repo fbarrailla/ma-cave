@@ -173,6 +173,16 @@
     "privacy": "Politique de confidentialité",
     "rights": "© {year} Ma Cave. Tous droits réservés."
   },
+  "age_gate": {
+    "label": "Vins entre particuliers",
+    "title": "Êtes-vous majeur ?",
+    "subtitle": "Ma Cave est une marketplace de vins réservée aux personnes majeures. Vous devez avoir 18 ans ou plus pour accéder à ce site.",
+    "confirm": "J'ai 18 ans ou plus",
+    "deny": "J'ai moins de 18 ans",
+    "denied_title": "Accès refusé",
+    "denied_text": "Vous devez avoir 18 ans ou plus pour accéder à ce site.",
+    "legal": "En entrant sur ce site, vous confirmez avoir l'âge légal pour consommer de l'alcool dans votre pays de résidence et acceptez nos conditions d'utilisation."
+  },
   "common": {
     "loading": "Chargement...",
     "error": "Une erreur est survenue",

@@ -173,6 +173,16 @@
     "privacy": "Privacy policy",
     "rights": "© {year} Ma Cave. All rights reserved."
   },
+  "age_gate": {
+    "label": "Wine between individuals",
+    "title": "Are you of legal age?",
+    "subtitle": "Ma Cave is a wine marketplace reserved for adults. You must be 18 years or older to access this site.",
+    "confirm": "I am 18 or older",
+    "deny": "I am under 18",
+    "denied_title": "Access denied",
+    "denied_text": "You must be 18 years or older to access this site.",
+    "legal": "By entering this site, you confirm that you are of legal drinking age in your country of residence and agree to our terms of use."
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
