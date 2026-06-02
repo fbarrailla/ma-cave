@@ -3,114 +3,218 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Wine, PlusCircle, MessageSquare, User, LogOut, Menu, X } from 'lucide-react'
+import { PlusCircle, MessageSquare, User, LogOut, Menu, X } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 export function Header() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
+  const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null)
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setUser(s?.user ?? null))
     return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    if (!user) { setUnreadCount(0); return }
-    const fetchUnread = async () => {
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('read', false)
-        .neq('sender_id', user.id)
-        .in('conversation_id', supabase
-          .from('conversations')
-          .select('id')
-          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`) as unknown as string[]
-        )
-      setUnreadCount(count ?? 0)
-    }
-    fetchUnread()
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-    const channel = supabase.channel('unread-messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetchUnread)
+  useEffect(() => {
+    if (!user) { setUnread(0); return }
+    const supabase = createClient()
+    const fetch = async () => {
+      const { count } = await supabase
+        .from('messages').select('*', { count: 'exact', head: true })
+        .eq('read', false).neq('sender_id', user.id)
+      setUnread(count ?? 0)
+    }
+    fetch()
+    const ch = supabase.channel('header-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetch)
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    return () => { supabase.removeChannel(ch) }
   }, [user])
 
-  const handleSignOut = async () => {
+  const signOut = async () => {
     await supabase.auth.signOut()
     window.location.href = '/'
   }
 
   return (
-    <header className="bg-[#4a1d24] text-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-wide">
-          <Wine className="h-6 w-6 text-[#c9a84c]" />
-          <span className="text-[#c9a84c]">Ma</span>
-          <span>Cave</span>
+    <header
+      className="sticky top-0 z-50 transition-all duration-300"
+      style={{
+        backgroundColor: scrolled
+          ? 'oklch(19% 0.07 15 / 0.97)'
+          : 'oklch(19% 0.07 15)',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        boxShadow: scrolled ? '0 1px 0 oklch(68% 0.09 68 / 0.15)' : 'none',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <span
+            className="text-2xl leading-none select-none"
+            style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'oklch(68% 0.09 68)' }}
+          >
+            𝕄
+          </span>
+          <span className="flex flex-col leading-none">
+            <span
+              className="text-xl tracking-wide"
+              style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'oklch(97.5% 0.005 80)' }}
+            >
+              Ma Cave
+            </span>
+            <span
+              className="text-[9px] tracking-[0.18em] uppercase"
+              style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)', fontWeight: 400 }}
+            >
+              vins entre particuliers
+            </span>
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/annonces" className="text-sm hover:text-[#c9a84c] transition-colors">
+        <nav className="hidden md:flex items-center gap-8">
+          <Link
+            href="/annonces"
+            className="text-[11px] uppercase tracking-[0.14em] font-medium link-gold"
+            style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}
+          >
             Explorer
           </Link>
+
           {user ? (
             <>
-              <Link href="/annonces/nouvelle"
-                className="flex items-center gap-1.5 bg-[#c9a84c] text-[#4a1d24] px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-[#e0bb5d] transition-colors">
-                <PlusCircle className="h-4 w-4" />
+              <Link
+                href="/annonces/nouvelle"
+                className="flex items-center gap-2 px-5 py-2 text-[11px] uppercase tracking-[0.12em] font-medium transition-all duration-200"
+                style={{
+                  border: '1px solid oklch(68% 0.09 68)',
+                  color: 'oklch(68% 0.09 68)',
+                  fontFamily: 'var(--font-sans)',
+                  borderRadius: '2px',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLAnchorElement
+                  el.style.backgroundColor = 'oklch(68% 0.09 68)'
+                  el.style.color = 'oklch(19% 0.07 15)'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLAnchorElement
+                  el.style.backgroundColor = 'transparent'
+                  el.style.color = 'oklch(68% 0.09 68)'
+                }}
+              >
+                <PlusCircle size={12} />
                 Vendre
               </Link>
-              <Link href="/messages" className="relative hover:text-[#c9a84c] transition-colors">
-                <MessageSquare className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+
+              <Link href="/messages" className="relative group" style={{ color: 'oklch(82% 0.06 72)' }}>
+                <MessageSquare size={18} className="transition-colors group-hover:text-[oklch(68%_0.09_68)]" />
+                {unread > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[9px] font-bold flex items-center justify-center rounded-full"
+                    style={{ backgroundColor: 'oklch(68% 0.09 68)', color: 'oklch(19% 0.07 15)' }}
+                  >
+                    {unread > 9 ? '9+' : unread}
                   </span>
                 )}
               </Link>
-              <Link href="/profil" className="hover:text-[#c9a84c] transition-colors">
-                <User className="h-5 w-5" />
+
+              <Link href="/profil" className="group" style={{ color: 'oklch(82% 0.06 72)' }}>
+                <User size={18} className="transition-colors group-hover:text-[oklch(68%_0.09_68)]" />
               </Link>
-              <button onClick={handleSignOut} className="hover:text-[#c9a84c] transition-colors">
-                <LogOut className="h-5 w-5" />
+
+              <button onClick={signOut} className="group" style={{ color: 'oklch(82% 0.06 72)' }}>
+                <LogOut size={18} className="transition-colors group-hover:text-[oklch(68%_0.09_68)]" />
               </button>
             </>
           ) : (
-            <Link href="/connexion"
-              className="bg-[#c9a84c] text-[#4a1d24] px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-[#e0bb5d] transition-colors">
+            <Link
+              href="/connexion"
+              className="px-5 py-2 text-[11px] uppercase tracking-[0.12em] font-medium transition-all duration-200"
+              style={{
+                border: '1px solid oklch(68% 0.09 68)',
+                color: 'oklch(68% 0.09 68)',
+                fontFamily: 'var(--font-sans)',
+                borderRadius: '2px',
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLAnchorElement
+                el.style.backgroundColor = 'oklch(68% 0.09 68)'
+                el.style.color = 'oklch(19% 0.07 15)'
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLAnchorElement
+                el.style.backgroundColor = 'transparent'
+                el.style.color = 'oklch(68% 0.09 68)'
+              }}
+            >
               Connexion
             </Link>
           )}
         </nav>
 
-        {/* Mobile menu button */}
-        <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden"
+          onClick={() => setOpen(!open)}
+          style={{ color: 'oklch(82% 0.06 72)' }}
+        >
+          {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden bg-[#3d1820] border-t border-[#722f37] px-4 py-4 flex flex-col gap-4">
-          <Link href="/annonces" onClick={() => setMenuOpen(false)} className="text-sm hover:text-[#c9a84c]">Explorer</Link>
+      {open && (
+        <div
+          className="md:hidden px-6 py-6 flex flex-col gap-5 border-t"
+          style={{ borderColor: 'oklch(68% 0.09 68 / 0.15)', backgroundColor: 'oklch(19% 0.07 15)' }}
+        >
+          <Link href="/annonces" onClick={() => setOpen(false)}
+            className="text-[11px] uppercase tracking-[0.14em]"
+            style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
+            Explorer
+          </Link>
           {user ? (
             <>
-              <Link href="/annonces/nouvelle" onClick={() => setMenuOpen(false)} className="text-sm hover:text-[#c9a84c]">Vendre une bouteille</Link>
-              <Link href="/messages" onClick={() => setMenuOpen(false)} className="text-sm hover:text-[#c9a84c]">Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
-              <Link href="/profil" onClick={() => setMenuOpen(false)} className="text-sm hover:text-[#c9a84c]">Mon profil</Link>
-              <button onClick={handleSignOut} className="text-sm text-left hover:text-[#c9a84c]">Déconnexion</button>
+              <Link href="/annonces/nouvelle" onClick={() => setOpen(false)}
+                className="text-[11px] uppercase tracking-[0.14em]"
+                style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
+                Vendre une bouteille
+              </Link>
+              <Link href="/messages" onClick={() => setOpen(false)}
+                className="text-[11px] uppercase tracking-[0.14em]"
+                style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
+                Messages {unread > 0 && `(${unread})`}
+              </Link>
+              <Link href="/profil" onClick={() => setOpen(false)}
+                className="text-[11px] uppercase tracking-[0.14em]"
+                style={{ color: 'oklch(82% 0.06 72)', fontFamily: 'var(--font-sans)' }}>
+                Mon profil
+              </Link>
+              <button onClick={signOut}
+                className="text-left text-[11px] uppercase tracking-[0.14em]"
+                style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)' }}>
+                Déconnexion
+              </button>
             </>
           ) : (
-            <Link href="/connexion" onClick={() => setMenuOpen(false)} className="text-sm hover:text-[#c9a84c]">Connexion</Link>
+            <Link href="/connexion" onClick={() => setOpen(false)}
+              className="text-[11px] uppercase tracking-[0.14em]"
+              style={{ color: 'oklch(68% 0.09 68)', fontFamily: 'var(--font-sans)' }}>
+              Connexion
+            </Link>
           )}
         </div>
       )}
