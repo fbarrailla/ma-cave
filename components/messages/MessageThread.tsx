@@ -50,12 +50,16 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
     e.preventDefault()
     if (!content.trim() || sending) return
     setSending(true)
-    const { error } = await supabase.from('messages').insert({
+    const trimmed = content.trim()
+    const { data, error } = await supabase.from('messages').insert({
       conversation_id: conversationId,
       sender_id: currentUserId,
-      content: content.trim(),
-    })
-    if (!error) setContent('')
+      content: trimmed,
+    }).select().single()
+    if (!error && data) {
+      setContent('')
+      setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data])
+    }
     setSending(false)
   }
 
