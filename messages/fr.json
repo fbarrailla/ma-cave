@@ -173,6 +173,23 @@
     "privacy": "Politique de confidentialité",
     "rights": "© {year} Ma Cave. Tous droits réservés."
   },
+  "payment": {
+    "gate_title": "Publier une annonce",
+    "price": "4 €",
+    "per_listing": "par annonce publiée",
+    "feature_1": "Annonce visible jusqu'à la vente",
+    "feature_2": "Photos en haute résolution",
+    "feature_3": "Messagerie intégrée avec les acheteurs",
+    "feature_4": "Statut réservé / vendu inclus",
+    "cta": "Payer 4 € avec PayPal",
+    "secure": "Paiement 100 % sécurisé via PayPal",
+    "login_required": "Connectez-vous pour publier une annonce",
+    "login_cta": "Se connecter",
+    "return_title": "Paiement confirmé",
+    "return_subtitle": "Merci pour votre paiement. Vous pouvez maintenant publier votre annonce.",
+    "return_cta": "Créer mon annonce",
+    "return_note": "Ce lien est valable pour la session en cours."
+  },
   "age_gate": {
     "label": "Vins entre particuliers",
     "title": "Êtes-vous majeur ?",

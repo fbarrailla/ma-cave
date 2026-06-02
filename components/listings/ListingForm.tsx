@@ -11,9 +11,10 @@ import type { Listing } from '@/lib/supabase/types'
 interface ListingFormProps {
   userId: string
   listing?: Listing
+  onSuccess?: () => void
 }
 
-export function ListingForm({ userId, listing }: ListingFormProps) {
+export function ListingForm({ userId, listing, onSuccess }: ListingFormProps) {
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -90,6 +91,7 @@ export function ListingForm({ userId, listing }: ListingFormProps) {
     } else {
       const { data, error } = await supabase.from('listings').insert({ ...payload, seller_id: userId }).select().single()
       if (error) { setError(error.message); setLoading(false); return }
+      onSuccess?.()
       router.push(`/annonces/detail?id=${data.id}`)
     }
   }

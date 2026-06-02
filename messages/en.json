@@ -173,6 +173,23 @@
     "privacy": "Privacy policy",
     "rights": "© {year} Ma Cave. All rights reserved."
   },
+  "payment": {
+    "gate_title": "Post a listing",
+    "price": "€4",
+    "per_listing": "per listing posted",
+    "feature_1": "Listing stays live until sold",
+    "feature_2": "High-resolution photos",
+    "feature_3": "Built-in messaging with buyers",
+    "feature_4": "Reserved / sold status included",
+    "cta": "Pay €4 with PayPal",
+    "secure": "100% secure payment via PayPal",
+    "login_required": "Sign in to post a listing",
+    "login_cta": "Sign in",
+    "return_title": "Payment confirmed",
+    "return_subtitle": "Thank you for your payment. You can now post your listing.",
+    "return_cta": "Create my listing",
+    "return_note": "This link is valid for the current session."
+  },
   "age_gate": {
     "label": "Wine between individuals",
     "title": "Are you of legal age?",
