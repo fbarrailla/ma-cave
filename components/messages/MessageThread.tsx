@@ -24,6 +24,15 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Mark all existing unread messages as read on open
+  useEffect(() => {
+    supabase.from('messages')
+      .update({ read: true })
+      .eq('conversation_id', conversationId)
+      .eq('read', false)
+      .neq('sender_id', currentUserId)
+  }, [conversationId, currentUserId])
+
   useEffect(() => {
     const channel = supabase.channel(`conv-${conversationId}`)
       .on('postgres_changes', {
@@ -37,7 +46,6 @@ export function MessageThread({ conversationId, currentUserId, initialMessages, 
           if (prev.some(m => m.id === newMsg.id)) return prev
           return [...prev, newMsg]
         })
-        // Mark as read if from other user
         if (newMsg.sender_id !== currentUserId) {
           supabase.from('messages').update({ read: true }).eq('id', newMsg.id)
         }

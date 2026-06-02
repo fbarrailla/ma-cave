@@ -37,6 +37,7 @@ export function Header() {
     fetch()
     const ch = supabase.channel('header-unread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, fetch)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [user])
