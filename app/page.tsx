@@ -1,33 +1,39 @@
+'use client'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { ListingCard } from '@/components/listings/ListingCard'
 import { Search, Shield, MessageSquare, TrendingUp } from 'lucide-react'
 import type { ListingWithSeller } from '@/lib/supabase/types'
 
-export default async function HomePage() {
-  const supabase = await createClient()
+const WINE_REGIONS_FEATURED = [
+  { name: 'Bordeaux', emoji: '🏰', color: 'bg-red-50 hover:bg-red-100' },
+  { name: 'Bourgogne', emoji: '🍇', color: 'bg-purple-50 hover:bg-purple-100' },
+  { name: 'Champagne', emoji: '🥂', color: 'bg-yellow-50 hover:bg-yellow-100' },
+  { name: 'Rhône', emoji: '⛰️', color: 'bg-orange-50 hover:bg-orange-100' },
+  { name: 'Alsace', emoji: '🌿', color: 'bg-green-50 hover:bg-green-100' },
+  { name: 'Loire', emoji: '🏡', color: 'bg-blue-50 hover:bg-blue-100' },
+]
 
-  const { data: listings } = await supabase
-    .from('listings')
-    .select('*, profiles:seller_id(id, full_name, avatar_url, location)')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(8)
+export default function HomePage() {
+  const [listings, setListings] = useState<ListingWithSeller[]>([])
 
-  const WINE_REGIONS_FEATURED = [
-    { name: 'Bordeaux', emoji: '🏰', color: 'bg-red-50 hover:bg-red-100' },
-    { name: 'Bourgogne', emoji: '🍇', color: 'bg-purple-50 hover:bg-purple-100' },
-    { name: 'Champagne', emoji: '🥂', color: 'bg-yellow-50 hover:bg-yellow-100' },
-    { name: 'Rhône', emoji: '⛰️', color: 'bg-orange-50 hover:bg-orange-100' },
-    { name: 'Alsace', emoji: '🌿', color: 'bg-green-50 hover:bg-green-100' },
-    { name: 'Loire', emoji: '🏡', color: 'bg-blue-50 hover:bg-blue-100' },
-  ]
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('listings')
+      .select('*, profiles:seller_id(id, full_name, avatar_url, location)')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(8)
+      .then(({ data }) => setListings((data ?? []) as unknown as ListingWithSeller[]))
+  }, [])
 
   return (
     <div>
       {/* Hero */}
       <section className="relative bg-[#4a1d24] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-5 bg-[url('/wine-pattern.svg')] bg-repeat" />
         <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-28 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
             Échangez vos plus belles{' '}
@@ -50,7 +56,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Stats */}
       <section className="bg-[#722f37] text-white">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-center gap-12 text-sm flex-wrap">
           <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-[#c9a84c]" /><span>Échanges sécurisés</span></div>
@@ -60,7 +65,6 @@ export default async function HomePage() {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Régions */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-[#1a1209] mb-6">Explorer par région</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -74,7 +78,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Dernières annonces */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-[#1a1209]">Dernières annonces</h2>
@@ -82,10 +85,10 @@ export default async function HomePage() {
               Voir tout →
             </Link>
           </div>
-          {listings && listings.length > 0 ? (
+          {listings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {listings.map(listing => (
-                <ListingCard key={listing.id} listing={listing as unknown as ListingWithSeller} />
+                <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
           ) : (

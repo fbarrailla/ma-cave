@@ -1,11 +1,28 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { ListingForm } from '@/components/listings/ListingForm'
+'use client'
 
-export default async function NouvellAnnoncePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/connexion?redirect=/annonces/nouvelle')
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ListingForm } from '@/components/listings/ListingForm'
+import { useUser } from '@/hooks/useUser'
+import { Loader2 } from 'lucide-react'
+
+export default function NouvellAnnoncePage() {
+  const user = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user === null) router.push('/connexion?redirect=/annonces/nouvelle')
+  }, [user])
+
+  if (user === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#722f37]" />
+      </div>
+    )
+  }
+
+  if (!user) return null
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

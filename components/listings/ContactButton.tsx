@@ -18,7 +18,7 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
 
   const handleContact = async () => {
     if (!currentUserId) {
-      router.push(`/connexion?redirect=/annonces/${listingId}`)
+      router.push(`/connexion?redirect=/annonces/detail?id=${listingId}`)
       return
     }
     if (currentUserId === sellerId) return
@@ -33,7 +33,7 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
       .single()
 
     if (existing) {
-      router.push(`/messages/${existing.id}`)
+      router.push(`/messages/conversation?id=${existing.id}`)
       return
     }
 
@@ -44,7 +44,7 @@ export function ContactButton({ listingId, sellerId, currentUserId }: ContactBut
       .single()
 
     if (error || !conv) { setLoading(false); return }
-    router.push(`/messages/${conv.id}`)
+    router.push(`/messages/conversation?id=${conv.id}`)
   }
 
   return (

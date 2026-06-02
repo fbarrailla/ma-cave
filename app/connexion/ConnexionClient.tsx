@@ -46,7 +46,7 @@ export function ConnexionClient() {
     setLoading(true); setError('')
     const { error } = await supabase.auth.signInWithOtp({
       email: form.email,
-      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${redirect}` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirect}` },
     })
     if (error) { setError(error.message); setLoading(false); return }
     setMessage('Lien magique envoyé ! Vérifiez votre email.')

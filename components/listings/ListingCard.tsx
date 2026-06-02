@@ -19,7 +19,7 @@ export function ListingCard({ listing }: ListingCardProps) {
   const dotClass = listing.color ? WINE_COLOR_DOT[listing.color] : 'bg-gray-400'
 
   return (
-    <Link href={`/annonces/${listing.id}`}
+    <Link href={`/annonces/detail?id=${listing.id}`}
       className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-[#f0e8d8] flex flex-col">
       {/* Image */}
       <div className="relative h-48 bg-[#f5f0e8]">

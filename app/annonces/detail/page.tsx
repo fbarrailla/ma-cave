@@ -1,12 +1,15 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { formatPrice, formatDate, WINE_COLOR_BADGE, WINE_COLOR_DOT } from '@/lib/utils'
-import { MapPin, Calendar, Package, Wine, Pencil, Eye } from 'lucide-react'
+import { MapPin, Calendar, Package, Wine, Pencil, Eye, Loader2 } from 'lucide-react'
 import { ContactButton } from '@/components/listings/ContactButton'
 import { ImageGallery } from '@/components/listings/ImageGallery'
-import type { Profile, Listing } from '@/lib/supabase/types'
+import { useUser } from '@/hooks/useUser'
+import type { Listing, Profile } from '@/lib/supabase/types'
 
 const COLOR_LABELS: Record<string, string> = {
   rouge: 'Rouge', blanc: 'Blanc', rosé: 'Rosé',
@@ -25,29 +28,43 @@ type ListingWithProfile = Listing & {
   profiles: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'bio' | 'location' | 'created_at'> | null
 }
 
-export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
+function ListingDetailContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const user = useUser()
+  const id = searchParams.get('id')
+  const [listing, setListing] = useState<ListingWithProfile | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const [{ data }, { data: { user } }] = await Promise.all([
+  useEffect(() => {
+    if (!id) { router.replace('/annonces'); return }
+    const supabase = createClient()
     supabase
       .from('listings')
       .select('*, profiles:seller_id(id, full_name, avatar_url, bio, location, created_at)')
-      .eq('id', id)
-      .single(),
-    supabase.auth.getUser(),
-  ])
+      .eq('id', id).single()
+      .then(({ data }) => {
+        if (!data) { router.replace('/annonces'); return }
+        setListing(data as unknown as ListingWithProfile)
+        supabase.from('listings').update({ views: ((data as ListingWithProfile).views ?? 0) + 1 }).eq('id', id)
+        setLoading(false)
+      })
+  }, [id])
 
-  const listing = data as ListingWithProfile | null
-  if (!listing) notFound()
+  if (loading || !id) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#722f37]" />
+      </div>
+    )
+  }
+
+  if (!listing) return null
 
   const isOwner = user?.id === listing.seller_id
   const colorClass = listing.color ? (WINE_COLOR_BADGE[listing.color] ?? '') : ''
   const dotClass = listing.color ? (WINE_COLOR_DOT[listing.color] ?? '') : ''
   const status = listing.status ?? 'active'
-
-  // Increment views (fire and forget)
-  supabase.from('listings').update({ views: (listing.views ?? 0) + 1 }).eq('id', id)
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -60,7 +77,6 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Images + Details */}
         <div className="lg:col-span-2 space-y-6">
           <ImageGallery images={listing.images ?? []} title={listing.title} />
 
@@ -82,10 +98,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                 {listing.producer && <p className="text-gray-500 mt-1">{listing.producer}</p>}
               </div>
               {isOwner && (
-                <Link href={`/annonces/${id}/editer`}
+                <Link href={`/annonces/editer?id=${id}`}
                   className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex-shrink-0">
-                  <Pencil className="h-4 w-4" />
-                  Modifier
+                  <Pencil className="h-4 w-4" /> Modifier
                 </Link>
               )}
             </div>
@@ -94,52 +109,34 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               {listing.region && (
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-[#722f37]" />
-                  <div>
-                    <div className="text-xs text-gray-400">Région</div>
-                    <div className="font-medium">{listing.region}</div>
-                  </div>
+                  <div><div className="text-xs text-gray-400">Région</div><div className="font-medium">{listing.region}</div></div>
                 </div>
               )}
               {listing.appellation && (
                 <div className="flex items-center gap-2 text-sm">
                   <Wine className="h-4 w-4 text-[#722f37]" />
-                  <div>
-                    <div className="text-xs text-gray-400">Appellation</div>
-                    <div className="font-medium">{listing.appellation}</div>
-                  </div>
+                  <div><div className="text-xs text-gray-400">Appellation</div><div className="font-medium">{listing.appellation}</div></div>
                 </div>
               )}
               {listing.vintage && (
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-[#722f37]" />
-                  <div>
-                    <div className="text-xs text-gray-400">Millésime</div>
-                    <div className="font-medium">{listing.vintage}</div>
-                  </div>
+                  <div><div className="text-xs text-gray-400">Millésime</div><div className="font-medium">{listing.vintage}</div></div>
                 </div>
               )}
               {listing.grape_variety && (
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-[#722f37]">🍇</span>
-                  <div>
-                    <div className="text-xs text-gray-400">Cépage</div>
-                    <div className="font-medium">{listing.grape_variety}</div>
-                  </div>
+                  <div><div className="text-xs text-gray-400">Cépage</div><div className="font-medium">{listing.grape_variety}</div></div>
                 </div>
               )}
               <div className="flex items-center gap-2 text-sm">
                 <Package className="h-4 w-4 text-[#722f37]" />
-                <div>
-                  <div className="text-xs text-gray-400">Format</div>
-                  <div className="font-medium">{listing.bottle_size ?? '75cl'}</div>
-                </div>
+                <div><div className="text-xs text-gray-400">Format</div><div className="font-medium">{listing.bottle_size ?? '75cl'}</div></div>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Eye className="h-4 w-4 text-[#722f37]" />
-                <div>
-                  <div className="text-xs text-gray-400">Vues</div>
-                  <div className="font-medium">{listing.views ?? 0}</div>
-                </div>
+                <div><div className="text-xs text-gray-400">Vues</div><div className="font-medium">{listing.views ?? 0}</div></div>
               </div>
             </div>
 
@@ -149,33 +146,23 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                 <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{listing.description}</p>
               </div>
             )}
-
             <p className="text-xs text-gray-400 mt-4">
               Publiée le {listing.created_at ? formatDate(listing.created_at) : ''}
             </p>
           </div>
         </div>
 
-        {/* Right: Price + Seller + Contact */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-[#f0e8d8] p-6">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-bold text-[#722f37]">{formatPrice(listing.price)}</span>
-            </div>
+            <div className="text-3xl font-bold text-[#722f37] mb-1">{formatPrice(listing.price)}</div>
             <p className="text-sm text-gray-500 mb-4">
               par bouteille · {listing.quantity ?? 1} disponible{(listing.quantity ?? 1) > 1 ? 's' : ''}
             </p>
-
             {!isOwner && status === 'active' && (
-              <ContactButton
-                listingId={listing.id}
-                sellerId={listing.seller_id}
-                currentUserId={user?.id}
-              />
+              <ContactButton listingId={listing.id} sellerId={listing.seller_id} currentUserId={user?.id} />
             )}
-
             {isOwner && (
-              <Link href={`/annonces/${id}/editer`}
+              <Link href={`/annonces/editer?id=${id}`}
                 className="block w-full text-center bg-[#722f37] text-white py-3 rounded-lg font-semibold hover:bg-[#9b3d47] transition-colors">
                 Modifier l&apos;annonce
               </Link>
@@ -198,18 +185,22 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
               </div>
-              {listing.profiles.bio && (
-                <p className="text-sm text-gray-500 line-clamp-3">{listing.profiles.bio}</p>
-              )}
+              {listing.profiles.bio && <p className="text-sm text-gray-500 line-clamp-3">{listing.profiles.bio}</p>}
               {listing.profiles.created_at && (
-                <p className="text-xs text-gray-400 mt-2">
-                  Membre depuis {formatDate(listing.profiles.created_at)}
-                </p>
+                <p className="text-xs text-gray-400 mt-2">Membre depuis {formatDate(listing.profiles.created_at)}</p>
               )}
             </div>
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ListingDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-64"><Loader2 className="h-8 w-8 animate-spin text-[#722f37]" /></div>}>
+      <ListingDetailContent />
+    </Suspense>
   )
 }

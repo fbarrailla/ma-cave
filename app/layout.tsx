@@ -6,7 +6,7 @@ import { Footer } from '@/components/layout/Footer'
 export const metadata: Metadata = {
   title: 'Ma Cave — Échangez vos bouteilles de vin',
   description: 'La marketplace entre particuliers pour acheter et vendre vos bouteilles de vin. Bordeaux, Bourgogne, Champagne et bien plus.',
-  metadataBase: new URL('https://ma-cave.fr'),
+  metadataBase: new URL('https://ma-cave.net'),
   openGraph: {
     title: 'Ma Cave — Échangez vos bouteilles de vin',
     description: 'La marketplace entre particuliers pour acheter et vendre vos bouteilles de vin.',
