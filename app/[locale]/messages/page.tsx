@@ -33,28 +33,43 @@ export default function MessagesPage() {
     if (user === null) { router.push('/connexion'); return }
 
     const supabase = createClient()
-    supabase
-      .from('conversations')
-      .select(`id, listing_id, buyer_id, seller_id, last_message_at, created_at,
-        listings:listing_id(id, title, images, price),
-        buyer:buyer_id(id, full_name, avatar_url),
-        seller:seller_id(id, full_name, avatar_url)`)
-      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-      .order('last_message_at', { ascending: false })
-      .then(async ({ data }) => {
-        const rawConvs = (data ?? []) as unknown as Omit<ConvItem, 'last_message' | 'unread_count'>[]
-        const enriched = await Promise.all(rawConvs.map(async conv => {
-          const { data: lastMsg } = await supabase
-            .from('messages').select('content, created_at, sender_id')
-            .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(1).single()
-          const { count } = await supabase
-            .from('messages').select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id).eq('read', false).neq('sender_id', user.id)
-          return { ...conv, last_message: lastMsg as MessagePreview | null, unread_count: count ?? 0 }
-        }))
-        setConversations(enriched)
-        setLoading(false)
-      })
+
+    const fetchConversations = async () => {
+      const { data } = await supabase
+        .from('conversations')
+        .select(`id, listing_id, buyer_id, seller_id, last_message_at, created_at,
+          listings:listing_id(id, title, images, price),
+          buyer:buyer_id(id, full_name, avatar_url),
+          seller:seller_id(id, full_name, avatar_url)`)
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .order('last_message_at', { ascending: false })
+      const rawConvs = (data ?? []) as unknown as Omit<ConvItem, 'last_message' | 'unread_count'>[]
+      const enriched = await Promise.all(rawConvs.map(async conv => {
+        const { data: lastMsg } = await supabase
+          .from('messages').select('content, created_at, sender_id')
+          .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(1).single()
+        const { count } = await supabase
+          .from('messages').select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id).eq('read', false).neq('sender_id', user.id)
+        return { ...conv, last_message: lastMsg as MessagePreview | null, unread_count: count ?? 0 }
+      }))
+      setConversations(enriched)
+      setLoading(false)
+    }
+
+    fetchConversations()
+
+    const ch = supabase.channel('messages-list')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, fetchConversations)
+      .subscribe()
+
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchConversations() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [user])
 
   if (user === undefined || loading) {

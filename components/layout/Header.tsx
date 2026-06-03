@@ -33,18 +33,28 @@ export function Header() {
   useEffect(() => {
     if (!user) { setUnread(0); return }
     const supabase = createClient()
-    const fetch = async () => {
+    const fetchUnread = async () => {
       const { count } = await supabase
         .from('messages').select('*', { count: 'exact', head: true })
         .eq('read', false).neq('sender_id', user.id)
       setUnread(count ?? 0)
     }
-    fetch()
+    fetchUnread()
+
+    // Realtime for new and updated messages
     const ch = supabase.channel('header-unread')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, fetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetchUnread)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, fetchUnread)
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+
+    // Re-fetch when user returns to the tab (Realtime UPDATE can be delayed)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchUnread() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [user])
 
   const signOut = async () => {
