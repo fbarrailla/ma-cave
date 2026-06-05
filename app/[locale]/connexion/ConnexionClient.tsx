@@ -38,7 +38,10 @@ export function ConnexionClient() {
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.fullName } },
+      options: {
+        data: { full_name: form.fullName },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirect}`,
+      },
     })
     if (error) { setError(error.message); setLoading(false); return }
     sendSubscriptionConfirmation(form.email).catch(() => {})
