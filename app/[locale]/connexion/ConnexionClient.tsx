@@ -42,8 +42,7 @@ export function ConnexionClient() {
     })
     if (error) { setError(error.message); setLoading(false); return }
     sendSubscriptionConfirmation(form.email).catch(() => {})
-    setMessage(t('confirm_email'))
-    setLoading(false)
+    router.push(redirect)
   }
 
   const handleMagicLink = async (e: React.FormEvent) => {
