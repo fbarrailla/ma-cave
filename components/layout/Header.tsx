@@ -57,6 +57,15 @@ export function Header() {
     }
   }, [user])
 
+  // Re-fetch on navigation (e.g. returning from a conversation clears the badge)
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    supabase.from('messages').select('*', { count: 'exact', head: true })
+      .eq('read', false).neq('sender_id', user.id)
+      .then(({ count }) => setUnread(count ?? 0))
+  }, [pathname, user])
+
   const signOut = async () => {
     await supabase.auth.signOut()
     window.location.href = '/'
