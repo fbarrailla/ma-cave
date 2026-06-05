@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { sendSubscriptionConfirmation } from '@/lib/emailjs'
 import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 
@@ -40,6 +41,7 @@ export function ConnexionClient() {
       options: { data: { full_name: form.fullName } },
     })
     if (error) { setError(error.message); setLoading(false); return }
+    sendSubscriptionConfirmation(form.email).catch(() => {})
     setMessage(t('confirm_email'))
     setLoading(false)
   }
